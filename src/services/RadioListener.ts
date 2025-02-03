@@ -95,7 +95,9 @@ export class RadioListener extends EventEmitter {
         
         try {
             // Calculate which buffer file to read from (previous buffer)
-            // TO-DO : Read the new buffer if enought data is available
+            // TO-DO : Read the new buffer if enought data is available,
+            // otherwise, reading the previous buffer while second buffer is being filled
+            // if bufferDuration is high, this might lead to loop sample from the end of the same finished buffer for a long time
             const sampleBufferIndex = (this.currentBufferIndex - 1 + this.BUFFER_COUNT) % this.BUFFER_COUNT;
             const bufferPath = this.getBufferPath(sampleBufferIndex);
 
