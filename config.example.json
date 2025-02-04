@@ -1,0 +1,64 @@
+{
+    "radios": [
+        {
+            "name": "Europe 2",
+            "streamUrl": "http://europe2.lmn.fm/europe2.mp3"
+        },
+        {
+            "name": "NRJ",
+            "streamUrl": "http://cdn.nrjaudio.fm/audio1/fr/30001/mp3_128.mp3?origine=fluxradios"
+        },
+        {
+            "name": "Skyrock",
+            "streamUrl": "http://icecast.skyrock.net/s/natio_mp3_128k"
+        },
+        {
+            "name": "Fun Radio",
+            "streamUrl": "http://streaming.radio.funradio.fr/fun-1-44-96"
+        },
+        {
+            "name": "Virgin Radio",
+            "streamUrl": "http://mp3lg4.tdf-cdn.com/9243/lag_164335.mp3"
+        },
+        {
+            "name": "RTL",
+            "streamUrl": "http://streaming.radio.rtl.fr/rtl-1-44-96"
+        },
+        {
+            "name": "France Inter",
+            "streamUrl": "http://direct.franceinter.fr/live/franceinter-midfi.mp3"
+        },
+        {
+            "name": "France Info",
+            "streamUrl": "http://direct.franceinfo.fr/live/franceinfo-midfi.mp3"
+        },
+        {
+            "name": "France Culture",
+            "streamUrl": "http://direct.franceculture.fr/live/franceculture-midfi.mp3"
+        },
+        {
+            "name": "France Musique",
+            "streamUrl": "http://direct.francemusique.fr/live/francemusique-midfi.mp3"
+        },
+        {
+            "name": "France Bleu",
+            "streamUrl": "http://direct.francebleu.fr/live/fb1071-midfi.mp3"
+        },
+        {
+            "name": "RMC",
+            "streamUrl": "http://chai5she.cdn.dvmr.fr/rmcinfo"
+        },
+        {
+            "name": "BFM Business",
+            "streamUrl": "http://chai5she.cdn.dvmr.fr/bfmbusiness"
+        },
+        {
+            "name": "Chérie FM",
+            "streamUrl": "http://cdn.nrjaudio.fm/audio1/fr/30201/mp3_128.mp3?origine=fluxradios"
+        },
+        {
+            "name": "Nostalgie",
+            "streamUrl": "http://cdn.nrjaudio.fm/audio1/fr/30051/mp3_128.mp3?origine=fluxradios"
+        }
+    ]
+}

@@ -1,56 +1,159 @@
-import path from 'path';
-import { RadioListener } from "./services/RadioListener";
+import path from 'path';    
 import dotenv from 'dotenv';
+import { RadioManager } from './services/RadioManager';
+import fs from 'fs';
+import { CommandManager } from './services/CommandManager';
+import { WebServer } from './services/servers/WebServer';
+import { SocketServer } from './services/servers/SocketServer';
 
 dotenv.config();
 
+// Validation function
+function validateConfig(config: any): boolean {
+    // Check if the top-level key 'radios' exists
+    if (!config.radios) {
+        throw new Error('Missing "radios" key in the config.');
+    }
+
+    // Check if 'radios' is an array
+    if (!Array.isArray(config.radios)) {
+        throw new Error('"radios" must be an array.');
+    }
+
+    // Validate each radio object in the array
+    config.radios.forEach((radio: any, index: number) => {
+        if (!radio.name || typeof radio.name !== 'string') {
+            throw new Error(`Radio at index ${index} is missing a valid "name" property.`);
+        }
+        if (!radio.streamUrl || typeof radio.streamUrl !== 'string') {
+            throw new Error(`Radio at index ${index} is missing a valid "streamUrl" property.`);
+        }
+    });
+
+    console.log('Config validated!');
+    return true;
+}
+
 async function main() {
-    const radioUrl = 'http://europe2.lmn.fm/europe2.mp3';
-    const sampleDirectory = path.join(__dirname, 'samples');
-    const bufferDirectory = path.join(__dirname, 'buffers');
-    
-    const radioListener = new RadioListener(
-        radioUrl,
-        sampleDirectory,
-        bufferDirectory,
-        60, // Sample every 60 seconds
-        15,  // 15 second samples
-        120, // Buffer 120 seconds of audio
-    );
+    const configPath = 'config.json';
+    const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+    console.log('Config loaded!');
 
-    console.log(`API key: ${process.env.SHAZAM_API_KEY}`);
+    const radioManagers: RadioManager[] = [];
 
-    radioListener.on('sampleTaken', async (sampleId) => {
-        console.log('Sample taken:', sampleId);
+    // Validate the config
+    validateConfig(config);
+
+    // Create a radio manager for each radio
+    config.radios.forEach((radio: any) => {
+        const radioManager = new RadioManager(radio.streamUrl, radio.name);
+        radioManagers.push(radioManager);
     });
 
-    radioListener.on('songRecognized', async (song) => {
-        console.log('Song recognized:', song);
-    });
+    // Start the command manager
+    const commandManager = new CommandManager(radioManagers);
+    commandManager.start();
 
-    radioListener.on('error', async (error) => {
-        console.error('Error:', error);
-    });
+    // Start the web server
+    const webServer = new WebServer(3000);
 
-    radioListener.on('streamStart', async () => {
-        console.log('Radio stream started');
-    });
-
-    radioListener.on('streamEnd', async () => {
-        console.log('Radio stream ended');
-    });
-
-
+    // Start the socket server
+    const socketServer = new SocketServer(webServer.getServer(), radioManagers);
 
     // Handle process termination
+    // More robust signal handling
     process.on('SIGINT', async () => {
-        console.log('Stopping radio listener...');
-        await radioListener.stop();
-        process.exit(0);
+        console.log('Gracefully shutting down...');
+        
+        try {
+            // Set a timeout to force exit if graceful shutdown takes too long
+            const forceExitTimeout = setTimeout(() => {
+                console.error('Force exiting after timeout');
+                process.exit(1);
+            }, 5000); // 5 seconds timeout
+            
+            // Track all stop operations
+            const stopPromises = radioManagers.map(async (manager) => {
+                try {
+                    await manager.stop();
+                    console.log(`Successfully stopped manager: ${manager.name}`);
+                } catch (error) {
+                    console.error(`Error stopping manager: ${manager.name}`, error);
+                    // Continue with other managers even if one fails
+                }
+            });
+            
+            // Wait for all managers to stop
+            await Promise.all(stopPromises);
+            
+            // Clear the timeout since we've completed gracefully
+            clearTimeout(forceExitTimeout);
+            
+            console.log('All managers stopped successfully');
+            process.exit(0);
+        } catch (error) {
+            console.error('Error during shutdown:', error);
+            process.exit(1);
+        }
     });
 
-    console.log('Starting radio listener...');
-    await radioListener.start();
+    // Start the radio listener
+    for (const radioManager of radioManagers) {
+        await radioManager.start();
+    }
+
+    /*async function startServices(radioManagers) {
+        console.log('Démarrage des services radio...');
+        
+        try {
+            // Démarrage en parallèle avec tracking des erreurs
+            const startResults = await Promise.allSettled(
+                radioManagers.map(async (manager) => {
+                    try {
+                        await manager.start();
+                        return {
+                            managerId: manager.id,
+                            success: true
+                        };
+                    } catch (error) {
+                        return {
+                            managerId: manager.id,
+                            success: false,
+                            error: error.message
+                        };
+                    }
+                })
+            );
+            
+            // Analyse des résultats
+            const failed = startResults.filter(result => 
+                result.value && !result.value.success
+            );
+            
+            if (failed.length > 0) {
+                console.error('Erreurs lors du démarrage des services:');
+                failed.forEach(f => {
+                    console.error(`- Service ${f.value.managerId}: ${f.value.error}`);
+                });
+                
+                // Décider si on continue ou non selon votre logique métier
+                if (failed.length === radioManagers.length) {
+                    throw new Error('Aucun service n\'a pu démarrer');
+                }
+            }
+            
+            const successful = startResults.filter(result => 
+                result.value && result.value.success
+            ).length;
+            
+            console.log(`${successful}/${radioManagers.length} services démarrés avec succès`);
+            
+            return startResults;
+        } catch (error) {
+            console.error('Erreur critique lors du démarrage des services:', error);
+            throw error; // Propager l'erreur pour la gestion au niveau supérieur
+        }
+    }*/
 }
 
 main().catch(console.error);

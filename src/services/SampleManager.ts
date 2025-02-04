@@ -32,8 +32,25 @@ export class SampleManager {
         this.samples.set(sample.id, sample);
     }
 
+    async removeSample(id: string): Promise<void> {
+        console.log(`Removing sample: ${id}`);
+        // Cleanup file
+        const filePath = path.join(this.sampleDirectory, `${id}.mp3`);
+        await AudioUtils.deleteFile(filePath);
+        
+        this.samples.delete(id);
+    }
+
     async getSample(id: string): Promise<AudioSample | undefined> {
         return this.samples.get(id);
+    }
+
+    async getLastSample(): Promise<AudioSample | undefined> {
+        const keys = Array.from(this.samples.keys());
+        if (keys.length > 0) {
+            return this.samples.get(keys[keys.length - 1]);
+        }
+        return undefined;
     }
 
     async cleanup(): Promise<void> {

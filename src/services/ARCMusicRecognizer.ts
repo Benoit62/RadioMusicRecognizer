@@ -1,9 +1,10 @@
 import fs from 'fs';
 import crypto from 'crypto';
 import FormData from 'form-data';
-import axios from 'axios';
+import { RecognizedSong } from '../types/types';
+import { BaseMusicRecognizer } from './BaseMusicRecognizer ';
 
-export class MusicRecognizerV2 {
+export class ARCMusicRecognizer extends BaseMusicRecognizer {
     private apiAccessKey: string = process.env.ACRCLOUD_ACCESS_KEY || '';
     private apiHost: string = process.env.ACRCLOUD_HOST || '';
     private apiSecretKey: string = process.env.ACRCLOUD_SECRET_KEY || '';
@@ -19,6 +20,7 @@ export class MusicRecognizerV2 {
     };
 
     constructor() {
+        super();
         this.defaultOptions = {
             host: this.apiHost,
             endpoint: '/v1/identify',
@@ -28,6 +30,15 @@ export class MusicRecognizerV2 {
             access_key: this.apiAccessKey,
             access_secret: this.apiSecretKey,
         };
+    }
+
+    protected displayResult(result: any): void {
+        if (result.metadata.music) {
+            console.log('ARC Cloud result:', result.metadata.music[0].title);
+        }
+        else {
+            console.log('ARC Cloud result empty:', result);
+        }
     }
 
     private async buildStringToSign(
@@ -51,7 +62,7 @@ export class MusicRecognizerV2 {
     /**
      * Identifies a sample of bytes
      */
-    public async identify(audioFilePath: string): Promise<void> {
+    public async recognizeSong(audioFilePath: string): Promise<RecognizedSong | null> {
         try {
             const bitmap = fs.readFileSync(audioFilePath);
             const data = Buffer.from(bitmap);
@@ -78,7 +89,16 @@ export class MusicRecognizerV2 {
             form.append('signature', signature);
             form.append('timestamp', timestamp.toString());
 
-            const response = await axios.post(
+            const options = {
+                method: 'POST',
+                url: `http://${this.defaultOptions.host}${this.defaultOptions.endpoint}`,
+                headers: {
+                    ...form.getHeaders(),
+                },
+                data: form
+            };
+
+            /*const response = await axios.post(
                 `http://${this.defaultOptions.host}${this.defaultOptions.endpoint}`,
                 form,
                 {
@@ -86,11 +106,23 @@ export class MusicRecognizerV2 {
                         ...form.getHeaders(),
                     },
                 }
-            );
+            );*/
+            const responseData = await this.sendRequest(options);
+        
+            this.displayResult(responseData);
 
-            console.log(`Recognition result: ${response.data.status.msg} - ${response.data.metadata.music[0].title}`);
+            if (responseData.metadata.music) {
+                return {
+                    title: responseData.metadata.music[0].title,
+                    artist: 'Undefined',
+                    timestamp: new Date(),
+                    confidence: 0.3 // Shazam API doesn't provide confidence score
+                };
+            }
+            return null;
         } catch (error) {
             console.error('Error recognizing song:', error);
+            return null;
         }
     }
 }

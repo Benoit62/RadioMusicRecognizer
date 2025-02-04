@@ -7,16 +7,17 @@ import ffmpeg from 'fluent-ffmpeg';
 import { AudioSample, RecognizedSong } from '../types/types';
 import { RadioEvents } from '../types/events';
 import { SampleManager } from './SampleManager';
-import { MusicRecognizer } from './MusicRecognizer';
-import { MusicRecognizerV2 } from './MusicRecognizerV2';
-import { buffer } from 'stream/consumers';
+import { ShazamMusicRecognizer } from './ShazamMusicRecognizer ';
+import { ARCMusicRecognizer } from './ARCMusicRecognizer';
 import { AudioUtils } from '../utils/AudioUtils';
+import { AuddMusicRecognizer } from './AuddMusicRecognizer';
 
 export class RadioListener extends EventEmitter {
     private streamUrl: string;
     private sampleManager: SampleManager;
-    private musicRecognizer: MusicRecognizer;
-    private musicRecognizerV2: MusicRecognizerV2;
+    private shazamMusicRecognizer: ShazamMusicRecognizer;
+    private arcMusicRecognizer: ARCMusicRecognizer;
+    private auddMusicRecognizer: AuddMusicRecognizer;
     private sampleInterval: number;
     private sampleDuration: number;
     private bufferDirectory: string;
@@ -38,8 +39,9 @@ export class RadioListener extends EventEmitter {
         super();
         this.streamUrl = streamUrl;
         this.sampleManager = new SampleManager(sampleDirectory);
-        this.musicRecognizer = new MusicRecognizer();
-        this.musicRecognizerV2 = new MusicRecognizerV2();
+        this.shazamMusicRecognizer = new ShazamMusicRecognizer();
+        this.arcMusicRecognizer = new ARCMusicRecognizer();
+        this.auddMusicRecognizer = new AuddMusicRecognizer();
         this.sampleInterval = sampleIntervalSeconds * 1000;
         this.sampleDuration = sampleDurationSeconds * 1000;
         this.bufferDirectory = bufferDirectory;
@@ -98,17 +100,30 @@ export class RadioListener extends EventEmitter {
             // TO-DO : Read the new buffer if enought data is available,
             // otherwise, reading the previous buffer while second buffer is being filled
             // if bufferDuration is high, this might lead to loop sample from the end of the same finished buffer for a long time
-            const sampleBufferIndex = (this.currentBufferIndex - 1 + this.BUFFER_COUNT) % this.BUFFER_COUNT;
+            // Then, it adds a delay to the sample recognition
+            //const sampleBufferIndex = (this.currentBufferIndex - 1 + this.BUFFER_COUNT) % this.BUFFER_COUNT;
+            const sampleBufferIndex = this.currentBufferIndex % this.BUFFER_COUNT;
             const bufferPath = this.getBufferPath(sampleBufferIndex);
 
-            // Wait for buffer file to exist and be non-empty
+            let currentBufferDuration = 0
+
+            // Wait for buffer file to exist and be non-empty and have enough duration
             await new Promise<void>((resolve, reject) => {
                 const checkBuffer = async () => {
                     if (fs.existsSync(bufferPath)) {
                         const stats = await fs.promises.stat(bufferPath);
                         if (stats.size > 0) {
-                            resolve();
-                            return;
+                            //Make sure the buffer has data to probe with ffmpeg
+                            try {
+                                currentBufferDuration = Math.round(await AudioUtils.getFileDuration(bufferPath)) * 1000;
+                                if(currentBufferDuration >= this.sampleDuration) {
+                                    resolve();
+                                    return;
+                                }
+                            } catch (error) {
+                                console.error('Error getting buffer duration:', error);
+                                
+                            }
                         }
                     }
                     setTimeout(checkBuffer, 1000);
@@ -119,7 +134,7 @@ export class RadioListener extends EventEmitter {
             // Extract sample from the buffer
             await new Promise<void>((resolve, reject) => {
                 ffmpeg(bufferPath)
-                    .setStartTime(this.bufferDuration / 1000 - this.sampleDuration / 1000) // Take from end of buffer
+                    .setStartTime(currentBufferDuration / 1000 - this.sampleDuration / 1000) // Take from end of buffer
                     .duration(this.sampleDuration / 1000)
                     .audioFrequency(44100)
                     .audioChannels(2)
@@ -170,14 +185,30 @@ export class RadioListener extends EventEmitter {
     private async startListening(): Promise<void> {
         while (this.isListening) {
             try {
+                const lastSample = await this.sampleManager.getLastSample();
                 const sample = await this.takeSample();
                 if (sample) {
-                    this.emit('sampleTaken', sample.id);
-                    const recognizedSong = await this.musicRecognizer.recognizeSong(sample.filePath);
-                    const recognizedSongV2 = await this.musicRecognizerV2.identify(sample.filePath);
-                    
-                    if (recognizedSong) {
-                        this.handleRecognizedSong(recognizedSong);
+                    // Check if sample is similar to last sample
+                    // This event occure iin the current implementation because sample 
+                    // is taken from the same buffer, at the same position (end)
+                    // while the second buffer is being filled
+                    // Usefull to avoid API usage for the same sample
+                    if(!await this.isSampleSimilar(sample, lastSample)) {
+                        this.emit('sampleTaken', sample.id);
+                        const recognizedSong = await this.shazamMusicRecognizer.recognizeSong(sample.filePath);
+                        if (recognizedSong) {
+                            this.handleRecognizedSong(recognizedSong);
+                        }
+
+                        /*const recognizedSongV2 = await this.arcMusicRecognizer.recognizeSong(sample.filePath);
+                        if(recognizedSongV2) {
+                            this.handleRecognizedSong(recognizedSongV2);
+                        }
+                        
+                        const recognizedSongV3 = await this.auddMusicRecognizer.recognizeSong(sample.filePath);
+                        if(recognizedSongV3) {
+                            this.handleRecognizedSong(recognizedSongV3);
+                        }*/
                     }
                 }
                 // Wait for next sample interval
@@ -186,6 +217,24 @@ export class RadioListener extends EventEmitter {
                 this.emit('error', error as Error);
             }
         }
+    }
+
+    private async isSampleSimilar(sample: AudioSample, lastSample: AudioSample | undefined): Promise<boolean> {
+        if(!lastSample) {
+            return false;
+        }
+
+        const sampleBuffer = fs.readFileSync(sample.filePath);
+        const lastSampleBuffer = fs.readFileSync(lastSample.filePath);
+
+        // Compare sample buffers
+        if (Buffer.compare(sampleBuffer, lastSampleBuffer) === 0) {
+            console.log(`Sample ${sample.id} is similar to last sample`);
+            this.sampleManager.removeSample(sample.id);
+            return true;
+        }
+
+        return false;
     }
 
     private handleRecognizedSong(song: RecognizedSong): void {
