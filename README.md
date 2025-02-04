@@ -43,7 +43,8 @@ The application make a request at least every 60 seconds (1 minute) (or more).
 
 ```math
 1 * 60 * 24 = 1440 request / day
-\n
+```
+```math
 1440 * 30 = 43 200 request / day
 ```
 
