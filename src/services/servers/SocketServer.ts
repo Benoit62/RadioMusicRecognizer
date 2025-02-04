@@ -21,6 +21,14 @@ export class SocketServer {
                     recentTracks: manager.getRecentTracks(),
                 }]);
             });
+
+            manager.on('ruleMatch', (songs, rule) => {
+                this.io.emit('ruleMatch', {
+                    radio: manager.sanitizedName,
+                    songs,
+                    rule,
+                });
+            });
         });
 
         this.io.on('connection', (socket) => {

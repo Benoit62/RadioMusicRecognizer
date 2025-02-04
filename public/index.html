@@ -10,21 +10,38 @@
 <body>
     <h1>Radio Listener</h1>
     <div id="radioData"></div>
+    <div id="eventData"></div>
 
     <script>
         const socket = io();
 
         socket.on('radioData', (data) => {
             const radioDataElement = document.getElementById('radioData');
-            radioDataElement.innerHTML = '';
 
             data.forEach((radio) => {
-                const radioElement = document.createElement('div');
                 console.log(radio);
+
+                let radioElement = document.getElementById(radio.name);
+                if (!radioElement) {
+                    radioElement = document.createElement('article');
+                    radioElement.id = radio.name;
+                }
+                
                 radioElement.innerHTML = `<h2>${radio.name}</h2><ul>${radio.recentTracks.map(track => `<li><b>${track.title}</b> by <i>${track.artist}</i> - <span style="color:red;">${track.confidence}</span> confidence </li>`).join('')}</ul>`;
                 radioDataElement.appendChild(radioElement);
             });
         });
+
+        socket.on('ruleMatch', (data) => {
+            console.log('ruleMatch', data);
+
+            const radioDataElement = document.getElementById('eventData');
+            radioDataElement.innerHTML = '';
+
+            const ruleMatchElement = document.createElement('article');
+            ruleMatchElement.innerHTML = `<h2>Rule Match on <span style="color: darkgreen;">${data.radio}</span></h2><p>Rule ${data.rule.artists.join(", ")}</p>`;
+            radioDataElement.appendChild(ruleMatchElement);
+        })
     </script>
 </body>
 </html>

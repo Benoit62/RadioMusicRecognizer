@@ -2,7 +2,19 @@
     "radios": [
         {
             "name": "Europe 2",
-            "streamUrl": "http://europe2.lmn.fm/europe2.mp3"
+            "streamUrl": "http://europe2.lmn.fm/europe2.mp3",
+            "rules": [
+                {
+                    "artists": ["Coldplay"],
+                    "keepOrder": true
+                }
+            ]
+        },
+        {
+            "name": "NRJ",
+            "streamUrl": "https://scdn.nrjaudio.fm/adwz2/fr/30001/mp3_128.mp3?origine=fluxradios",
+            "rules": [
+            ]
         }
     ]
 }

@@ -11,3 +11,14 @@ export interface RecognizedSong {
     timestamp: Date;
     confidence: number;
 }
+
+export interface Track {
+    title: string;
+    artist: string;
+}
+
+export interface Rules {
+    tracks?: Track[];
+    artists?: string[];
+    keepOrder: boolean;
+}
