@@ -41,8 +41,8 @@ However, if a premium plan is subscribed to one of them, the application could r
 
 The application make a request at least every 60 seconds (1 minute) (or more).
 
-````math
-1*60*24 = 1440 request / day
+```math
+1 * 60 * 24 = 1440 request / day
 
 1440 * 30 = 43 200 request / day
 ```
@@ -55,7 +55,7 @@ Choose one of theses providers (no matter which plan), configure if necessary an
 
 Shazam is used by default, go into `src/RadioListener.ts` at line 198.
 Uncomment the service you want to use and comment the other.
-````typescript
+```typescript
 const recognizedSong = await this.shazamMusicRecognizer.recognizeSong(sample.filePath);
 if (recognizedSong) {
     this.handleRecognizedSong(recognizedSong);
