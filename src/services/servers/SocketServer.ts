@@ -24,7 +24,7 @@ export class SocketServer {
 
             manager.on('ruleMatch', (songs, rule) => {
                 this.io.emit('ruleMatch', {
-                    radio: manager.sanitizedName,
+                    radio: manager.name,
                     songs,
                     rule,
                 });

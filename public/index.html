@@ -39,7 +39,7 @@
             radioDataElement.innerHTML = '';
 
             const ruleMatchElement = document.createElement('article');
-            ruleMatchElement.innerHTML = `<h2>Rule Match on <span style="color: darkgreen;">${data.radio}</span></h2><p>Rule ${data.rule.artists.join(", ")}</p>`;
+            ruleMatchElement.innerHTML = `<h2>Rule Match on <span style="color: darkgreen;">${data.radio}</span></h2><p>Rule : <i>${data.rule.artists.join(", ")}</i></p>`;
             radioDataElement.appendChild(ruleMatchElement);
         })
     </script>

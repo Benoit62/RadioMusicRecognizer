@@ -5,7 +5,19 @@
             "streamUrl": "http://europe2.lmn.fm/europe2.mp3",
             "rules": [
                 {
-                    "artists": ["Coldplay"],
+                    "artists": ["kungs"],
+                    "keepOrder": true
+                },
+                {
+                    "artists": ["coldplay"],
+                    "keepOrder": true
+                },
+                {
+                    "artists": ["daft punk"],
+                    "keepOrder": true
+                },
+                {
+                    "artists": ["Beyoncé"],
                     "keepOrder": true
                 }
             ]

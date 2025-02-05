@@ -35,6 +35,8 @@ export class ARCMusicRecognizer extends BaseMusicRecognizer {
     protected displayResult(result: any): void {
         if (result.metadata.music) {
             console.log('ARC Cloud result:', result.metadata.music[0].title);
+        } else if (result.metadata.humming) {
+            console.log('ARC Cloud result:', result.metadata.humming[0].title);
         }
         else {
             console.log('ARC Cloud result empty:', result);
@@ -114,7 +116,16 @@ export class ARCMusicRecognizer extends BaseMusicRecognizer {
             if (responseData.metadata.music) {
                 return {
                     title: responseData.metadata.music[0].title,
-                    artist: 'Undefined',
+                    artist: responseData.metadata.music[0].artists[0].name,
+                    timestamp: new Date(),
+                    confidence: 0.3 // Shazam API doesn't provide confidence score
+                };
+            }
+
+            if (responseData.metadata.humming) {
+                return {
+                    title: responseData.metadata.humming[0].title,
+                    artist: responseData.metadata.humming[0].artists[0].name,
                     timestamp: new Date(),
                     confidence: 0.3 // Shazam API doesn't provide confidence score
                 };
