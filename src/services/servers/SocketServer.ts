@@ -40,6 +40,7 @@ export class SocketServer {
             // Set up periodic updates
             const interval = setInterval(() => {
                 this.sendRadioData(socket);
+                socket.emit('trigger', "Test trigger " + Math.random());
             }, 60000); // Send data every 60 seconds
 
             // Handle client disconnection

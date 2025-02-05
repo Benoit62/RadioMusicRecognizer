@@ -195,17 +195,17 @@ export class RadioListener extends EventEmitter {
                     // Usefull to avoid API usage for the same sample
                     if(!await this.isSampleSimilar(sample, lastSample)) {
                         this.emit('sampleTaken', sample.id);
-                        const recognizedSong = await this.shazamMusicRecognizer.recognizeSong(sample.filePath);
+                        /*const recognizedSong = await this.shazamMusicRecognizer.recognizeSong(sample.filePath);
                         if (recognizedSong) {
                             this.handleRecognizedSong(recognizedSong);
-                        }
+                        }*/
 
-                        /*const recognizedSongV2 = await this.arcMusicRecognizer.recognizeSong(sample.filePath);
+                        const recognizedSongV2 = await this.arcMusicRecognizer.recognizeSong(sample.filePath);
                         if(recognizedSongV2) {
                             this.handleRecognizedSong(recognizedSongV2);
                         }
                         
-                        const recognizedSongV3 = await this.auddMusicRecognizer.recognizeSong(sample.filePath);
+                        /*const recognizedSongV3 = await this.auddMusicRecognizer.recognizeSong(sample.filePath);
                         if(recognizedSongV3) {
                             this.handleRecognizedSong(recognizedSongV3);
                         }*/
