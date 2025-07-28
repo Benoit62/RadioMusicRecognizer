@@ -73,3 +73,32 @@ if(recognizedSongV3) {
 }*/
 ```
 Multiple can be used.
+
+
+## Usage
+Depending on the configuration, the application will sample and detect radio(s) current music at different intervals.
+With enought frequency, this can provide a comprehensive list of played song on the radio.
+
+The application allow to configure detection and associate rules set to trigger event depending on the rules.
+
+### Radio streams
+You can provide as must radio stream as you want.
+Every stream added increase the API usages
+```math
+usage = frequency * streams
+
+1440 request / day * 2 streams = 2880 request / day = 86 400 request / month
+```
+
+### Rules
+
+
+## Improvements
+
+- Automatic configuration of the API used (file/endpoint/command param)
+- Better handling API responses based on their schema
+- Automatic API overflow detection and switching
+- Visual interface for rule creation
+- Visual interface for configuration (streams/rules/APIs)
+- More rules
+
