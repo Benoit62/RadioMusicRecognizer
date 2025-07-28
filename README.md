@@ -45,7 +45,7 @@ The application make a request at least every 60 seconds (1 minute) (or more).
 1 * 60 * 24 = 1440 request / day
 ```
 ```math
-1440 * 30 = 43 200 request / day
+1440 * 30 = 43 200 request / month
 ```
 
 Choose one of theses providers (no matter which plan), configure if necessary and add the corresponding credentials in the .env
